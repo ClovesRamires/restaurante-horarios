@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: restaurante-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb+srv://usuario:contraseña@cluster.mongodb.net/restaurante_horarios
+      - key: JWT_SECRET
+        value: tu_jwt_secret_seguro
+
+  - type: web
+    name: restaurante-frontend
+    env: static
+    buildCommand: cd frontend/desktop && npm run build
+    staticPublishPath: ./frontend/desktop/build
+    routes:
+      - type: rewrite
+        source: /admin/*
+        destination: /index.html
+      - type: rewrite
+        source: /mobile/*
+        destination: /index.html
