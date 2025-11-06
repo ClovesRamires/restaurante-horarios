@@ -1,15 +1,74 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Configuración mejorada de PostgreSQL
+const getPoolConfig = () => {
+  const connectionString = process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    console.error('❌ DATABASE_URL no está configurada');
+    throw new Error('DATABASE_URL no configurada');
+  }
+
+  return {
+    connectionString: connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { 
+      rejectUnauthorized: false 
+    } : false,
+    // Configuraciones adicionales para mejor estabilidad
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    max: 20, // máximo de conexiones en el pool
+  };
+};
+
+let pool;
+
+try {
+  pool = new Pool(getPoolConfig());
+  
+  // Eventos del pool para debugging
+  pool.on('connect', () => {
+    console.log('✅ Nueva conexión a PostgreSQL establecida');
+  });
+  
+  pool.on('error', (err) => {
+    console.error('❌ Error inesperado en el pool de PostgreSQL:', err);
+  });
+  
+} catch (error) {
+  console.error('❌ Error creando el pool de conexiones:', error);
+  throw error;
+}
+
+// Función para probar la conexión
+const testConnection = async () => {
+  try {
+    const client = await pool.connect();
+    console.log('✅ Conexión a PostgreSQL exitosa');
+    
+    const result = await client.query('SELECT version()');
+    console.log('📊 Versión de PostgreSQL:', result.rows[0].version);
+    
+    client.release();
+    return true;
+  } catch (error) {
+    console.error('❌ Error conectando a PostgreSQL:', error.message);
+    console.log('🔧 DATABASE_URL:', process.env.DATABASE_URL ? '✅ Configurada' : '❌ No configurada');
+    return false;
+  }
+};
 
 // Función para inicializar la base de datos
 const initDatabase = async () => {
   try {
     console.log('🔄 Inicializando base de datos...');
+    
+    // Primero probar la conexión
+    const connected = await testConnection();
+    if (!connected) {
+      throw new Error('No se pudo conectar a la base de datos');
+    }
 
     // Tabla de empleados
     await pool.query(`
@@ -55,7 +114,6 @@ const initDatabase = async () => {
     // Insertar admin por defecto
     const adminCheck = await pool.query('SELECT * FROM admins WHERE username = $1', ['admin']);
     if (adminCheck.rows.length === 0) {
-      const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash('Apolo13', 12);
       await pool.query(
         'INSERT INTO admins (username, password) VALUES ($1, $2)',
@@ -71,43 +129,53 @@ const initDatabase = async () => {
         INSERT INTO employees (full_name, document_number, social_security_number, sector) VALUES
         ('Juan Pérez González', '12345678A', '281234567890', 'cocina'),
         ('María García López', '87654321B', '289876543210', 'sala'),
-        ('Carlos Martínez Ruiz', '11223344C', '281122334455', 'office'),
-        ('Ana Fernández Díaz', '44332211D', '284433221100', 'cocina'),
-        ('Laura Sánchez Martín', '55667788E', '285566778899', 'sala')
+        ('Carlos Martínez Ruiz', '11223344C', '281122334455', 'office')
       `);
       console.log('✅ Empleados de ejemplo creados');
     }
 
-    // Crear índices para mejor performance
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
-      CREATE INDEX IF NOT EXISTS idx_attendance_employee_id ON attendance(employee_id);
-      CREATE INDEX IF NOT EXISTS idx_employees_document ON employees(document_number);
-      CREATE INDEX IF NOT EXISTS idx_employees_sector ON employees(sector);
-    `);
-
     console.log('✅ Base de datos inicializada correctamente');
+    return true;
   } catch (error) {
     console.error('❌ Error inicializando base de datos:', error);
     throw error;
   }
 };
 
-// Función de salud para verificar conexión
+// Función de salud mejorada
 const healthCheck = async () => {
   try {
     const result = await pool.query('SELECT NOW() as current_time, version() as version');
+    
+    // Verificar también las tablas esenciales
+    const tablesCheck = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('employees', 'attendance', 'admins')
+    `);
+    
+    const essentialTables = ['employees', 'attendance', 'admins'];
+    const missingTables = essentialTables.filter(table => 
+      !tablesCheck.rows.find(row => row.table_name === table)
+    );
+
     return {
       status: 'healthy',
       database: 'connected',
       current_time: result.rows[0].current_time,
-      version: result.rows[0].version
+      version: result.rows[0].version,
+      tables: {
+        status: missingTables.length === 0 ? 'complete' : 'incomplete',
+        missing: missingTables
+      }
     };
   } catch (error) {
     return {
       status: 'unhealthy',
       database: 'disconnected',
-      error: error.message
+      error: error.message,
+      suggestion: 'Verificar la configuración de DATABASE_URL en Render'
     };
   }
 };
@@ -115,5 +183,6 @@ const healthCheck = async () => {
 module.exports = {
   pool,
   initDatabase,
-  healthCheck
+  healthCheck,
+  testConnection
 };

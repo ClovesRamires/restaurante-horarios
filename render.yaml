@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: restaurante-backend-pg
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurante-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+    healthCheckPath: /api/health
+    # Configuración adicional para mejor estabilidad
+    autoDeploy: true
+    pullRequestPreviewsEnabled: false
+
+databases:
+  - name: restaurante-db
+    plan: free
+    databaseName: restaurante_horarios
+    user: restaurante_user
+    # Configuración adicional
+    ipAllowList: []
+    terminationProtection: false
