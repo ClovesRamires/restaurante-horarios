@@ -57,6 +57,48 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// ==================== RUTA RAIZ ====================
+app.get('/', (req, res) => {
+  res.json({
+    message: '🏢 SISTEMA DE CONTROL DE HORARIOS - LA LUMBRE DE RIVAS',
+    version: '1.0.0',
+    status: 'operativo',
+    endpoints: {
+      health: '/api/health',
+      auth: {
+        employee: '/api/auth/employee',
+        admin: '/api/auth/admin'
+      },
+      attendance: {
+        entry: '/api/attendance/entry',
+        smoking_break: {
+          start: '/api/attendance/smoking-break/start',
+          end: '/api/attendance/smoking-break/end'
+        },
+        lunch_break: {
+          start: '/api/attendance/lunch-break/start', 
+          end: '/api/attendance/lunch-break/end'
+        },
+        exit: '/api/attendance/exit',
+        today: '/api/attendance/today'
+      },
+      admin: {
+        employees: '/api/admin/employees',
+        attendance: '/api/admin/attendance'
+      }
+    },
+    credentials: {
+      admin: { username: 'admin', password: 'Apolo13' },
+      employees: [
+        { document: '12345678A', name: 'Juan Pérez', sector: 'cocina' },
+        { document: '87654321B', name: 'María García', sector: 'sala' },
+        { document: '11223344C', name: 'Carlos Martínez', sector: 'office' }
+      ]
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ==================== RUTAS PÚBLICAS ====================
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -424,69 +466,8 @@ app.get('/api/admin/attendance', authenticateToken, (req, res) => {
   }
 });
 
-// ==================== INICIO ====================
+// ==================== INICIO DEL SERVIDOR ====================
 const PORT = process.env.PORT || 5000;
-// ==================== RUTA RAIZ ====================
-app.get('/', (req, res) => {
-  res.json({
-    message: '🏢 SISTEMA DE CONTROL DE HORARIOS - LA LUMBRE DE RIVAS',
-    version: '1.0.0',
-    status: 'operativo',
-    endpoints: {
-      health: '/api/health',
-      auth: {
-        employee: '/api/auth/employee',
-        admin: '/api/auth/admin'
-      },
-      attendance: {
-        entry: '/api/attendance/entry',
-        smoking_break: {
-          start: '/api/attendance/smoking-break/start',
-          end: '/api/attendance/smoking-break/end'
-        },
-        lunch_break: {
-          start: '/api/attendance/lunch-break/start', 
-          end: '/api/attendance/lunch-break/end'
-        },
-        exit: '/api/attendance/exit',
-        today: '/api/attendance/today'
-      },
-      admin: {
-        employees: '/api/admin/employees',
-        attendance: '/api/admin/attendance'
-      }
-    },
-    credentials: {
-      admin: { username: 'admin', password: 'Apolo13' },
-      employees: [
-        { document: '12345678A', name: 'Juan Pérez', sector: 'cocina' },
-        { document: '87654321B', name: 'María García', sector: 'sala' },
-        { document: '11223344C', name: 'Carlos Martínez', sector: 'office' }
-      ]
-    },
-    timestamp: new Date().toISOString()
-  });
-});
-
-// ==================== INICIO ====================
-const PORT = process.env.PORT || 5000;
-// Servir archivos estáticos (agrega esto después de los middleware)
-app.use(express.static('public'));
-
-// Ruta para servir el frontend móvil
-app.get('/mobile', (req, res) => {
-  res.sendFile(__dirname + '/public/mobile.html');
-});
-
-// Ruta para servir el frontend escritorio  
-app.get('/desktop', (req, res) => {
-  res.sendFile(__dirname + '/public/desktop.html');
-});
-
-// Ruta para servir el admin
-app.get('/admin', (req, res) => {
-  res.sendFile(__dirname + '/public/admin.html');
-});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 SISTEMA LA LUMBRE - 100% OPERATIVO');
@@ -494,7 +475,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔧 Puerto: ${PORT}`);
   console.log('\n📊 ESTADO:');
   console.log('   ✅ Servidor: Funcionando');
-  console.log('   ✅ Base de datos: En memoria (SQLite)');
+  console.log('   ✅ Base de datos: En memoria');
   console.log('   ✅ Empleados: 3 cargados');
   console.log('\n🔐 CREDENCIALES:');
   console.log('   👨‍💼 Admin: usuario "admin", contraseña "Apolo13"');
@@ -504,21 +485,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('   ❤️  Health: /api/health');
   console.log('   🔐 Login empleado: /api/auth/employee');
   console.log('   👑 Login admin: /api/auth/admin');
-});
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 SISTEMA LA LUMBRE - 100% OPERATIVO');
-  console.log(`📍 URL: https://tu-app.onrender.com`);
-  console.log(`🔧 Puerto: ${PORT}`);
-  console.log('\n📊 ESTADO:');
-  console.log('   ✅ Servidor: Funcionando');
-  console.log('   ✅ Base de datos: En memoria (SQLite)');
-  console.log('   ✅ Empleados: 3 cargados');
-  console.log('\n🔐 CREDENCIALES:');
-  console.log('   👨‍💼 Admin: usuario "admin", contraseña "Apolo13"');
-  console.log('   👨‍🍳 Empleados: documentos 12345678A, 87654321B, 11223344C');
-  console.log('\n🌐 ENDPOINTS:');
-  console.log('   📍 Health: /api/health');
-  console.log('   🔐 Login: /api/auth/employee');
-  console.log('   👑 Admin: /api/auth/admin');
-  console.log('   ⏰ Asistencia: /api/attendance/entry');
 });
