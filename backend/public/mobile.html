@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Lumbre - Control Horarios</title>
+    <title>La Lumbre - Móvil</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
@@ -12,7 +12,12 @@
         .header h1 { font-size: 24px; margin-bottom: 5px; }
         .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .login-buttons { display: flex; flex-direction: column; gap: 10px; }
-        .employee-btn { background: #007AFF; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .employee-btn { background: #007AFF; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 16px; cursor: pointer; margin-bottom: 10px; }
+        .login-form { display: none; background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .login-submit { background: #28a745; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; font-size: 16px; }
         .action-btn { background: #007AFF; color: white; border: none; padding: 20px; border-radius: 12px; font-size: 18px; margin: 5px 0; width: 100%; }
         .break-btn { background: #FF9500; }
         .lunch-btn { background: #FF3B30; }
@@ -21,6 +26,8 @@
         .info-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #E5E5E5; }
         .logout-btn { background: #8E8E93; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; margin-top: 20px; }
         .hidden { display: none; }
+        .error { background: #FF3B30; color: white; padding: 10px; border-radius: 8px; text-align: center; margin: 10px 0; }
+        .password-hint { font-size: 12px; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -33,11 +40,56 @@
             <div class="card">
                 <h2 style="text-align: center; margin-bottom: 20px;">Iniciar Sesión</h2>
                 <div class="login-buttons">
-                    <button class="employee-btn" onclick="loginEmployee('12345678A')">👨‍🍳 Juan Pérez (Cocina)</button>
-                    <button class="employee-btn" onclick="loginEmployee('87654321B')">👩‍💼 María García (Sala)</button>
-                    <button class="employee-btn" onclick="loginEmployee('11223344C')">👨‍💻 Carlos Martínez (Office)</button>
+                    <button class="employee-btn" onclick="showLoginForm('12345678A', 'Juan Pérez (Cocina)')">
+                        👨‍🍳 Juan Pérez (Cocina)
+                    </button>
+                    <div id="loginForm12345678A" class="login-form">
+                        <div class="form-group">
+                            <label>Documento:</label>
+                            <input type="text" id="doc12345678A" value="12345678A" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña (últimos 4 dígitos):</label>
+                            <input type="password" id="password12345678A" placeholder="5678">
+                            <div class="password-hint">Contraseña: últimos 4 dígitos del documento → 5678</div>
+                        </div>
+                        <button class="login-submit" onclick="loginEmployee('12345678A')">Entrar</button>
+                    </div>
+
+                    <button class="employee-btn" onclick="showLoginForm('87654321B', 'María García (Sala)')">
+                        👩‍💼 María García (Sala)
+                    </button>
+                    <div id="loginForm87654321B" class="login-form">
+                        <div class="form-group">
+                            <label>Documento:</label>
+                            <input type="text" id="doc87654321B" value="87654321B" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña (últimos 4 dígitos):</label>
+                            <input type="password" id="password87654321B" placeholder="4321">
+                            <div class="password-hint">Contraseña: últimos 4 dígitos del documento → 4321</div>
+                        </div>
+                        <button class="login-submit" onclick="loginEmployee('87654321B')">Entrar</button>
+                    </div>
+
+                    <button class="employee-btn" onclick="showLoginForm('11223344C', 'Carlos Martínez (Office)')">
+                        👨‍💻 Carlos Martínez (Office)
+                    </button>
+                    <div id="loginForm11223344C" class="login-form">
+                        <div class="form-group">
+                            <label>Documento:</label>
+                            <input type="text" id="doc11223344C" value="11223344C" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña (últimos 4 dígitos):</label>
+                            <input type="password" id="password11223344C" placeholder="3344">
+                            <div class="password-hint">Contraseña: últimos 4 dígitos del documento → 3344</div>
+                        </div>
+                        <button class="login-submit" onclick="loginEmployee('11223344C')">Entrar</button>
+                    </div>
                 </div>
             </div>
+            <div id="loginError" class="error hidden"></div>
         </div>
 
         <div id="mainScreen" class="hidden">
@@ -54,34 +106,71 @@
                     <div class="info-item"><span>Salida:</span><span id="exitTime">No registrada</span></div>
                 </div>
                 <div id="actionsPanel"></div>
+                <div id="actionError" class="error hidden"></div>
                 <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = window.location.origin.replace('/mobile', '');
-        let currentEmployee = null;
-        let currentToken = null;
-        let todayAttendance = null;
+        const API_BASE = window.location.origin;
+        let currentEmployee = null, currentToken = null, todayAttendance = null;
+
+        function showLoginForm(documentNumber, employeeName) {
+            // Ocultar todos los formularios primero
+            document.querySelectorAll('.login-form').forEach(form => {
+                form.style.display = 'none';
+            });
+            
+            // Mostrar el formulario específico
+            const form = document.getElementById('loginForm' + documentNumber);
+            form.style.display = 'block';
+            
+            // Enfocar el campo de contraseña
+            document.getElementById('password' + documentNumber).focus();
+        }
+
+        function showError(id, msg) {
+            document.getElementById(id).textContent = msg;
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideError(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
 
         async function loginEmployee(documentNumber) {
+            hideError('loginError');
+            
+            const password = document.getElementById('password' + documentNumber).value;
+            
+            if (!password) {
+                showError('loginError', 'Por favor ingresa la contraseña');
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_BASE}/api/auth/employee`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ documentNumber })
+                const response = await fetch(API_BASE + '/api/auth/employee', {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documentNumber, password })
                 });
+                
                 const data = await response.json();
                 if (data.success) {
                     currentEmployee = data.employee;
                     currentToken = data.token;
                     showMainScreen();
                     loadTodayAttendance();
+                    // Ocultar formularios
+                    document.querySelectorAll('.login-form').forEach(form => {
+                        form.style.display = 'none';
+                    });
                 } else {
-                    alert('Error: ' + data.message);
+                    showError('loginError', data.message);
                 }
             } catch (error) {
-                alert('Error de conexión: ' + error.message);
+                showError('loginError', 'Error de conexión');
             }
         }
 
@@ -89,230 +178,94 @@
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('mainScreen').classList.remove('hidden');
             document.getElementById('employeeName').textContent = currentEmployee.fullName;
-            document.getElementById('employeeSector').textContent = `Sector: ${currentEmployee.sector}`;
+            document.getElementById('employeeSector').textContent = 'Sector: ' + currentEmployee.sector;
         }
 
         async function loadTodayAttendance() {
             try {
-                const response = await fetch(`${API_BASE}/api/attendance/today`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                const response = await fetch(API_BASE + '/api/attendance/today', {
+                    headers: { 'Authorization': 'Bearer ' + currentToken }
                 });
                 const data = await response.json();
-                todayAttendance = data.attendance;
-                updateAttendanceDisplay();
-                updateActionButtons();
+                if (data.success) {
+                    todayAttendance = data.attendance;
+                    updateDisplay();
+                    updateButtons();
+                }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
 
-        function updateAttendanceDisplay() {
-            const formatTime = (timeStr) => timeStr ? new Date(timeStr).toLocaleTimeString('es-ES') : 'No registrada';
-            document.getElementById('entryTime').textContent = todayAttendance?.entry_time ? formatTime(todayAttendance.entry_time) : 'No registrada';
-            document.getElementById('smokingBreak').textContent = todayAttendance?.smoking_break_start ? (todayAttendance.smoking_break_end ? 'Completada' : 'En curso') : 'No iniciada';
-            document.getElementById('lunchBreak').textContent = todayAttendance?.lunch_break_start ? (todayAttendance.lunch_break_end ? 'Completada' : 'En curso') : 'No iniciada';
-            document.getElementById('exitTime').textContent = todayAttendance?.exit_time ? formatTime(todayAttendance.exit_time) : 'No registrada';
+        function updateDisplay() {
+            const fmt = t => t ? new Date(t).toLocaleTimeString('es-ES') : 'No registrada';
+            document.getElementById('entryTime').textContent = fmt(todayAttendance?.entry_time);
+            document.getElementById('smokingBreak').textContent = todayAttendance?.smoking_break_start ? 
+                (todayAttendance.smoking_break_end ? 'Completada' : 'En curso') : 'No iniciada';
+            document.getElementById('lunchBreak').textContent = todayAttendance?.lunch_break_start ? 
+                (todayAttendance.lunch_break_end ? 'Completada' : 'En curso') : 'No iniciada';
+            document.getElementById('exitTime').textContent = fmt(todayAttendance?.exit_time);
         }
 
-        function updateActionButtons() {
-            const actionsPanel = document.getElementById('actionsPanel');
+        function updateButtons() {
+            const panel = document.getElementById('actionsPanel');
             if (!todayAttendance?.entry_time) {
-                actionsPanel.innerHTML = `<button class="action-btn" onclick="registerAction('entry')">✅ Registrar Entrada</button>`;
+                panel.innerHTML = `<button class="action-btn" onclick="registerAction('entry')">✅ Registrar Entrada</button>`;
             } else if (!todayAttendance?.exit_time) {
-                actionsPanel.innerHTML = `
-                    ${!todayAttendance.smoking_break_start ? `<button class="action-btn break-btn" onclick="registerAction('smoking-break/start')">🚬 Iniciar Pausa Fumar</button>` : !todayAttendance.smoking_break_end ? `<button class="action-btn break-btn" onclick="registerAction('smoking-break/end')">🚬 Finalizar Pausa Fumar</button>` : ''}
-                    ${!todayAttendance.lunch_break_start ? `<button class="action-btn lunch-btn" onclick="registerAction('lunch-break/start')">🍽️ Iniciar Pausa Comida</button>` : !todayAttendance.lunch_break_end ? `<button class="action-btn lunch-btn" onclick="registerAction('lunch-break/end')">🍽️ Finalizar Pausa Comida</button>` : ''}
+                panel.innerHTML = `
+                    ${!todayAttendance.smoking_break_start ? `<button class="action-btn break-btn" onclick="registerAction('smoking-break/start')">🚬 Iniciar Pausa Fumar</button>` : ''}
+                    ${!todayAttendance.smoking_break_end && todayAttendance.smoking_break_start ? `<button class="action-btn break-btn" onclick="registerAction('smoking-break/end')">🚬 Finalizar Pausa Fumar</button>` : ''}
+                    ${!todayAttendance.lunch_break_start ? `<button class="action-btn lunch-btn" onclick="registerAction('lunch-break/start')">🍽️ Iniciar Pausa Comida</button>` : ''}
+                    ${!todayAttendance.lunch_break_end && todayAttendance.lunch_break_start ? `<button class="action-btn lunch-btn" onclick="registerAction('lunch-break/end')">🍽️ Finalizar Pausa Comida</button>` : ''}
                     <button class="action-btn exit-btn" onclick="registerAction('exit')">🏠 Registrar Salida</button>`;
             } else {
-                actionsPanel.innerHTML = `<div style="text-align: center; padding: 20px; color: #666;">✅ Jornada completada</div>`;
+                panel.innerHTML = `<div style="text-align:center;padding:20px;color:#28a745;">✅ Jornada completada</div>`;
             }
         }
 
         async function registerAction(action) {
+            hideError('actionError');
             try {
                 const endpoints = {
-                    'entry': '/api/attendance/entry', 'smoking-break/start': '/api/attendance/smoking-break/start',
-                    'smoking-break/end': '/api/attendance/smoking-break/end', 'lunch-break/start': '/api/attendance/lunch-break/start',
-                    'lunch-break/end': '/api/attendance/lunch-break/end', 'exit': '/api/attendance/exit'
+                    'entry': '/api/attendance/entry',
+                    'smoking-break/start': '/api/attendance/smoking-break/start',
+                    'smoking-break/end': '/api/attendance/smoking-break/end',
+                    'lunch-break/start': '/api/attendance/lunch-break/start',
+                    'lunch-break/end': '/api/attendance/lunch-break/end',
+                    'exit': '/api/attendance/exit'
                 };
-                const response = await fetch(`${API_BASE}${endpoints[action]}`, {
-                    method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                if (data.success) { alert('✅ ' + data.message); loadTodayAttendance(); } 
-                else { alert('❌ ' + data.message); }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        function logout() {
-            currentEmployee = null; currentToken = null; todayAttendance = null;
-            document.getElementById('mainScreen').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
-HTML
-
-# Crear archivo desktop.html
-cat > backend/public/desktop.html << 'HTML'
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Lumbre - Escritorio</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; min-height: 100vh; }
-        .desktop-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 15px; margin-bottom: 30px; text-align: center; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .employees-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .employee-card { background: white; border-radius: 10px; padding: 25px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease; }
-        .employee-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); border: 2px solid #667eea; }
-        .employee-avatar { width: 80px; height: 80px; background: #667eea; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em; margin: 0 auto 15px; }
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
-        .attendance-panel { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .info-grid { display: grid; gap: 15px; margin-bottom: 25px; }
-        .info-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .actions-panel { display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { padding: 20px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
-        .action-btn.entry { background: #28a745; } .action-btn.break { background: #ffc107; color: #333; }
-        .action-btn.lunch { background: #fd7e14; } .action-btn.exit { background: #dc3545; }
-        .logout-btn { background: #6c757d; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div id="loginScreen">
-        <div class="desktop-container">
-            <div class="header">
-                <h1>🏢 La Lumbre de Rivas</h1>
-                <p>Sistema de Control de Horarios - Versión Escritorio</p>
-            </div>
-            <div class="employees-grid" id="employeesGrid"></div>
-        </div>
-    </div>
-
-    <div id="mainScreen" style="display: none;">
-        <div class="desktop-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <div><h1 id="welcomeName">Bienvenido</h1><p id="welcomeSector">Sector</p></div>
-                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
-            </div>
-            <div class="dashboard">
-                <div class="attendance-panel">
-                    <h2>📊 Registro de Hoy</h2>
-                    <div class="info-grid">
-                        <div class="info-item"><label>Entrada:</label><span id="desktopEntryTime">No registrada</span></div>
-                        <div class="info-item"><label>Pausa Fumar:</label><span id="desktopSmokingBreak">No iniciada</span></div>
-                        <div class="info-item"><label>Pausa Comida:</label><span id="desktopLunchBreak">No iniciada</span></div>
-                        <div class="info-item"><label>Salida:</label><span id="desktopExitTime">No registrada</span></div>
-                    </div>
-                </div>
-                <div class="attendance-panel">
-                    <h2>⏰ Acciones</h2>
-                    <div class="actions-panel" id="desktopActions"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const API_BASE = window.location.origin.replace('/desktop', '');
-        let currentEmployee = null, currentToken = null, todayAttendance = null;
-
-        function loadEmployees() {
-            const employees = [
-                {id: 1, full_name: 'Juan Pérez González', document_number: '12345678A', sector: 'cocina'},
-                {id: 2, full_name: 'María García López', document_number: '87654321B', sector: 'sala'},
-                {id: 3, full_name: 'Carlos Martínez Ruiz', document_number: '11223344C', sector: 'office'}
-            ];
-            document.getElementById('employeesGrid').innerHTML = employees.map(emp => `
-                <div class="employee-card" onclick="loginEmployee('${emp.document_number}')">
-                    <div class="employee-avatar">${emp.full_name.split(' ').map(n => n[0]).join('')}</div>
-                    <h3>${emp.full_name}</h3><p>${emp.sector}</p><small>${emp.document_number}</small>
-                </div>
-            `).join('');
-        }
-
-        async function loginEmployee(documentNumber) {
-            try {
-                const response = await fetch(`${API_BASE}/api/auth/employee`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ documentNumber })
+                const response = await fetch(API_BASE + endpoints[action], {
+                    method: 'POST', 
+                    headers: { 
+                        'Authorization': 'Bearer ' + currentToken, 
+                        'Content-Type': 'application/json' 
+                    }
                 });
                 const data = await response.json();
                 if (data.success) {
-                    currentEmployee = data.employee; currentToken = data.token;
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainScreen').style.display = 'block';
-                    document.getElementById('welcomeName').textContent = `Bienvenido, ${currentEmployee.fullName}`;
-                    document.getElementById('welcomeSector').textContent = `Sector: ${currentEmployee.sector}`;
+                    alert('✅ ' + data.message);
                     loadTodayAttendance();
-                } else alert('Error: ' + data.message);
-            } catch (error) { alert('Error: ' + error.message); }
-        }
-
-        async function loadTodayAttendance() {
-            try {
-                const response = await fetch(`${API_BASE}/api/attendance/today`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
-                });
-                const data = await response.json();
-                todayAttendance = data.attendance;
-                updateDesktopDisplay();
-                updateDesktopActions();
-            } catch (error) { console.error('Error:', error); }
-        }
-
-        function updateDesktopDisplay() {
-            const formatTime = (timeStr) => timeStr ? new Date(timeStr).toLocaleTimeString('es-ES') : 'No registrada';
-            document.getElementById('desktopEntryTime').textContent = todayAttendance?.entry_time ? formatTime(todayAttendance.entry_time) : 'No registrada';
-            document.getElementById('desktopSmokingBreak').textContent = todayAttendance?.smoking_break_start ? (todayAttendance.smoking_break_end ? 'Completada' : 'En curso') : 'No iniciada';
-            document.getElementById('desktopLunchBreak').textContent = todayAttendance?.lunch_break_start ? (todayAttendance.lunch_break_end ? 'Completada' : 'En curso') : 'No iniciada';
-            document.getElementById('desktopExitTime').textContent = todayAttendance?.exit_time ? formatTime(todayAttendance.exit_time) : 'No registrada';
-        }
-
-        function updateDesktopActions() {
-            const actionsPanel = document.getElementById('desktopActions');
-            if (!todayAttendance?.entry_time) {
-                actionsPanel.innerHTML = `<button class="action-btn entry" onclick="registerAction('entry')">✅ Registrar Entrada</button>`;
-            } else if (!todayAttendance?.exit_time) {
-                actionsPanel.innerHTML = `
-                    ${!todayAttendance.smoking_break_start ? `<button class="action-btn break" onclick="registerAction('smoking-break/start')">🚬 Iniciar Pausa Fumar</button>` : !todayAttendance.smoking_break_end ? `<button class="action-btn break" onclick="registerAction('smoking-break/end')">🚬 Finalizar Pausa Fumar</button>` : ''}
-                    ${!todayAttendance.lunch_break_start ? `<button class="action-btn lunch" onclick="registerAction('lunch-break/start')">🍽️ Iniciar Pausa Comida</button>` : !todayAttendance.lunch_break_end ? `<button class="action-btn lunch" onclick="registerAction('lunch-break/end')">🍽️ Finalizar Pausa Comida</button>` : ''}
-                    <button class="action-btn exit" onclick="registerAction('exit')">🏠 Registrar Salida</button>`;
-            } else {
-                actionsPanel.innerHTML = `<div style="text-align: center; padding: 20px; color: #28a745; font-weight: bold;">✅ Jornada completada</div>`;
+                } else {
+                    showError('actionError', data.message);
+                }
+            } catch (error) {
+                showError('actionError', 'Error de conexión');
             }
         }
 
-        async function registerAction(action) {
-            try {
-                const endpoints = {
-                    'entry': '/api/attendance/entry', 'smoking-break/start': '/api/attendance/smoking-break/start',
-                    'smoking-break/end': '/api/attendance/smoking-break/end', 'lunch-break/start': '/api/attendance/lunch-break/start',
-                    'lunch-break/end': '/api/attendance/lunch-break/end', 'exit': '/api/attendance/exit'
-                };
-                const response = await fetch(`${API_BASE}${endpoints[action]}`, {
-                    method: 'POST', headers: { 'Authorization': `Bearer ${currentToken}`, 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                if (data.success) { alert('✅ ' + data.message); loadTodayAttendance(); } 
-                else { alert('❌ ' + data.message); }
-            } catch (error) { alert('Error: ' + error.message); }
-        }
-
         function logout() {
-            currentEmployee = null; currentToken = null; todayAttendance = null;
-            document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById('loginScreen').style.display = 'block';
+            currentEmployee = null; 
+            currentToken = null; 
+            todayAttendance = null;
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            hideError('loginError');
+            hideError('actionError');
+            // Limpiar contraseñas
+            document.querySelectorAll('input[type="password"]').forEach(input => {
+                input.value = '';
+            });
         }
-        window.addEventListener('load', loadEmployees);
     </script>
 </body>
 </html>
-HTML
