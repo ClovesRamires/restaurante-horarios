@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Lumbre de Rivas - Sistema de Control de Horarios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+        
+        .app-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .app-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .app-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .app-card h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+        
+        .app-card p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        
+        .credentials {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .credentials h3 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .credential-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .api-info {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #28a745;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 La Lumbre de Rivas</h1>
+            <p>Sistema de Control de Horarios - 100% Operativo</p>
+            <div class="status">✅ SISTEMA EN LÍNEA</div>
+        </div>
+
+        <div class="apps-grid">
+            <a href="/mobile" class="app-card">
+                <div class="app-icon">📱</div>
+                <h2>Versión Móvil</h2>
+                <p>Interface optimizada para dispositivos móviles Android. Control de entrada, pausas y salida.</p>
+            </a>
+            
+            <a href="/desktop" class="app-card">
+                <div class="app-icon">💻</div>
+                <h2>Versión Escritorio</h2>
+                <p>Interface completa para ordenadores. Gestión profesional de horarios y empleados.</p>
+            </a>
+            
+            <a href="/admin" class="app-card">
+                <div class="app-icon">👑</div>
+                <h2>Panel de Administración</h2>
+                <p>Gestión completa de empleados, reportes y control del sistema.</p>
+            </a>
+        </div>
+
+        <div class="credentials">
+            <h3>🔐 Credenciales de Acceso</h3>
+            
+            <div class="credential-item">
+                <strong>Administrador:</strong><br>
+                Usuario: <code>admin</code><br>
+                Contraseña: <code>Apolo13</code>
+            </div>
+            
+            <div class="credential-item">
+                <strong>Empleados de Prueba:</strong><br>
+                • Juan Pérez (Cocina) - Documento: <code>12345678A</code><br>
+                • María García (Sala) - Documento: <code>87654321B</code><br>
+                • Carlos Martínez (Office) - Documento: <code>11223344C</code>
+            </div>
+        </div>
+
+        <div class="api-info">
+            <h3>🔧 API del Sistema</h3>
+            <p>El backend está funcionando correctamente en:</p>
+            <code>/api/health</code> - Estado del sistema<br>
+            <code>/api/auth/employee</code> - Login empleados<br>
+            <code>/api/auth/admin</code> - Login administrador
+        </div>
+    </div>
+
+    <script>
+        // Verificar estado del sistema
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                console.log('✅ Sistema operativo:', data);
+            } catch (error) {
+                console.log('⚠️ Error verificando estado:', error);
+            }
+        }
+        
+        // Verificar al cargar la página
+        window.addEventListener('load', checkSystemStatus);
+    </script>
+</body>
+</html>

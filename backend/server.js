@@ -451,4 +451,38 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('\n🔐 CREDENCIALES:');
   console.log('   👨‍💼 Admin: usuario "admin", contraseña "Apolo13"');
   console.log('   👨‍🍳 Empleados: documentos 12345678A, 87654321B, 11223344C');
+  // ==================== RUTAS PRINCIPALES ====================
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/mobile', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
+});
+
+app.get('/desktop', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'desktop.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Manejar rutas no encontradas
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Ruta no encontrada',
+    available_routes: {
+      main: '/',
+      mobile: '/mobile',
+      desktop: '/desktop', 
+      admin: '/admin',
+      api: {
+        health: '/api/health',
+        auth: '/api/auth/employee, /api/auth/admin',
+        attendance: '/api/attendance/*'
+      }
+    }
+  });
+});
 });
