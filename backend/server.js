@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 
-// 🔥 SERVIR ARCHIVOS ESTÁTICOS
+// Servir archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware
@@ -16,7 +16,7 @@ app.use(express.json());
 // JWT Secret
 const JWT_SECRET = 'la_lumbre_secret_2024_rivas';
 
-// Base de datos en memoria (FUNCIONAL INMEDIATO)
+// Base de datos en memoria
 let employees = [
   {
     id: 1,
@@ -63,54 +63,18 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ==================== RUTA RAIZ ====================
+const requireAdmin = (req, res, next) => {
+  if (req.user.type !== 'admin') {
+    return res.status(403).json({ message: 'Se requieren privilegios de administrador' });
+  }
+  next();
+};
+
+// ==================== RUTAS PRINCIPALES ====================
 app.get('/', (req, res) => {
-  res.json({
-    message: '🏢 SISTEMA DE CONTROL DE HORARIOS - LA LUMBRE DE RIVAS',
-    version: '1.0.0',
-    status: 'operativo',
-    endpoints: {
-      health: '/api/health',
-      auth: {
-        employee: '/api/auth/employee',
-        admin: '/api/auth/admin'
-      },
-      attendance: {
-        entry: '/api/attendance/entry',
-        smoking_break: {
-          start: '/api/attendance/smoking-break/start',
-          end: '/api/attendance/smoking-break/end'
-        },
-        lunch_break: {
-          start: '/api/attendance/lunch-break/start', 
-          end: '/api/attendance/lunch-break/end'
-        },
-        exit: '/api/attendance/exit',
-        today: '/api/attendance/today'
-      },
-      admin: {
-        employees: '/api/admin/employees',
-        attendance: '/api/admin/attendance'
-      }
-    },
-    frontends: {
-      mobile: '/mobile',
-      desktop: '/desktop',
-      admin: '/admin'
-    },
-    credentials: {
-      admin: { username: 'admin', password: 'Apolo13' },
-      employees: [
-        { document: '12345678A', name: 'Juan Pérez', sector: 'cocina' },
-        { document: '87654321B', name: 'María García', sector: 'sala' },
-        { document: '11223344C', name: 'Carlos Martínez', sector: 'office' }
-      ]
-    },
-    timestamp: new Date().toISOString()
-  });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ==================== RUTAS PARA FRONTENDS ====================
 app.get('/mobile', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'mobile.html'));
 });
@@ -120,36 +84,10 @@ app.get('/desktop', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  res.send(`
-    <html>
-      <head>
-        <title>Panel Admin - La Lumbre</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
-          .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          h1 { color: #333; }
-          .credential { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>👑 Panel de Administración</h1>
-          <p>El panel de administración completo estará disponible próximamente.</p>
-          
-          <div class="credential">
-            <strong>Credenciales Admin:</strong><br>
-            Usuario: <code>admin</code><br>
-            Contraseña: <code>Apolo13</code>
-          </div>
-          
-          <p><a href="/">← Volver al inicio</a></p>
-        </div>
-      </body>
-    </html>
-  `);
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ==================== RUTAS PÚBLICAS ====================
+// ==================== API ROUTES ====================
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
@@ -161,7 +99,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Login empleado
+// Auth
 app.post('/api/auth/employee', (req, res) => {
   try {
     const { documentNumber } = req.body;
@@ -200,7 +138,6 @@ app.post('/api/auth/employee', (req, res) => {
   }
 });
 
-// Login administrador
 app.post('/api/auth/admin', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -231,7 +168,7 @@ app.post('/api/auth/admin', async (req, res) => {
   }
 });
 
-// ==================== ASISTENCIA ====================
+// Attendance
 app.post('/api/attendance/entry', authenticateToken, (req, res) => {
   try {
     const employeeId = req.user.id;
@@ -433,28 +370,19 @@ app.get('/api/attendance/today', authenticateToken, (req, res) => {
   }
 });
 
-// ==================== ADMIN ====================
-app.get('/api/admin/employees', authenticateToken, (req, res) => {
+// Admin routes
+app.get('/api/admin/employees', authenticateToken, requireAdmin, (req, res) => {
   try {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ message: 'Acceso denegado' });
-    }
-
     res.json({ success: true, employees });
   } catch (error) {
     res.status(500).json({ message: 'Error del servidor' });
   }
 });
 
-app.post('/api/admin/employees', authenticateToken, (req, res) => {
+app.post('/api/admin/employees', authenticateToken, requireAdmin, (req, res) => {
   try {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ message: 'Acceso denegado' });
-    }
-
     const { fullName, documentNumber, socialSecurityNumber, sector } = req.body;
 
-    // Verificar si ya existe
     const existing = employees.find(emp => emp.document_number === documentNumber);
     if (existing) {
       return res.status(400).json({ message: 'Ya existe empleado con este documento' });
@@ -481,12 +409,8 @@ app.post('/api/admin/employees', authenticateToken, (req, res) => {
   }
 });
 
-app.get('/api/admin/attendance', authenticateToken, (req, res) => {
+app.get('/api/admin/attendance', authenticateToken, requireAdmin, (req, res) => {
   try {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ message: 'Acceso denegado' });
-    }
-
     const { startDate, endDate, sector } = req.query;
     
     let filtered = attendance.map(record => {
@@ -499,14 +423,12 @@ app.get('/api/admin/attendance', authenticateToken, (req, res) => {
       };
     });
 
-    // Filtrar por fecha
     if (startDate && endDate) {
       filtered = filtered.filter(record => 
         record.date >= startDate && record.date <= endDate
       );
     }
 
-    // Filtrar por sector
     if (sector) {
       filtered = filtered.filter(record => record.employee_sector === sector);
     }
@@ -523,19 +445,10 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 SISTEMA LA LUMBRE - 100% OPERATIVO');
   console.log(`📍 URL Principal: https://tu-app.onrender.com`);
-  console.log(`📱 Frontend Móvil: https://tu-app.onrender.com/mobile`);
-  console.log(`💻 Frontend Escritorio: https://tu-app.onrender.com/desktop`);
-  console.log(`👑 Panel Admin: https://tu-app.onrender.com/admin`);
-  console.log('\n📊 ESTADO DEL SISTEMA:');
-  console.log('   ✅ Servidor: Ejecutándose');
-  console.log('   ✅ Base de datos: En memoria');
-  console.log('   ✅ Empleados: 3 cargados');
-  console.log('\n🔐 CREDENCIALES DE ACCESO:');
+  console.log(`📱 Móvil: https://tu-app.onrender.com/mobile`);
+  console.log(`💻 Escritorio: https://tu-app.onrender.com/desktop`);
+  console.log(`👑 Admin: https://tu-app.onrender.com/admin`);
+  console.log('\n🔐 CREDENCIALES:');
   console.log('   👨‍💼 Admin: usuario "admin", contraseña "Apolo13"');
   console.log('   👨‍🍳 Empleados: documentos 12345678A, 87654321B, 11223344C');
-  console.log('\n🌐 ENDPOINTS DISPONIBLES:');
-  console.log('   📍 Raíz: /');
-  console.log('   ❤️  Health: /api/health');
-  console.log('   🔐 Auth: /api/auth/employee, /api/auth/admin');
-  console.log('   ⏰ Asistencia: /api/attendance/*');
 });
