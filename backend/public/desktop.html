@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Lumbre - Escritorio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        
+        .desktop-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .employees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .employee-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            border-color: #667eea;
+        }
+        
+        .employee-avatar {
+            width: 80px;
+            height: 80px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+        
+        .employee-card h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .employee-card p {
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .employee-card small {
+            color: #999;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .attendance-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .attendance-panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .info-grid {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-item label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .info-item span {
+            color: #666;
+        }
+        
+        .actions-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            padding: 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .action-btn.entry {
+            background: #28a745;
+        }
+        
+        .action-btn.break {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .action-btn.lunch {
+            background: #fd7e14;
+        }
+        
+        .action-btn.exit {
+            background: #dc3545;
+        }
+        
+        .action-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .action-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .logout-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        
+        .logout-btn:hover {
+            background: #5a6268;
+        }
+        
+        .welcome-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .welcome-header h1 {
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .employees-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen">
+        <div class="desktop-container">
+            <div class="header">
+                <h1>🏢 La Lumbre de Rivas</h1>
+                <p>Sistema de Control de Horarios - Versión Escritorio</p>
+            </div>
+
+            <div class="employees-grid" id="employeesGrid">
+                <!-- Los empleados se cargan dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla Principal -->
+    <div id="mainScreen" style="display: none;">
+        <div class="desktop-container">
+            <div class="welcome-header">
+                <div>
+                    <h1 id="welcomeName">Bienvenido</h1>
+                    <p id="welcomeSector">Sector</p>
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+            </div>
+
+            <div class="dashboard">
+                <div class="attendance-panel">
+                    <h2>📊 Registro de Hoy</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Entrada:</label>
+                            <span id="desktopEntryTime">No registrada</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Pausa Fumar:</label>
+                            <span id="desktopSmokingBreak">No iniciada</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Pausa Comida:</label>
+                            <span id="desktopLunchBreak">No iniciada</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Salida:</label>
+                            <span id="desktopExitTime">No registrada</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Horas Trabajadas:</label>
+                            <span id="desktopWorkedTime">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="attendance-panel">
+                    <h2>⏰ Acciones</h2>
+                    <div class="actions-panel" id="desktopActions">
+                        <!-- Los botones se generan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentEmployee = null;
+        let currentToken = null;
+        let todayAttendance = null;
+
+        // Cargar empleados para login
+        async function loadEmployees() {
+            try {
+                // En una app real, obtendríamos esto del backend
+                // Por ahora usamos datos estáticos
+                const employees = [
+                    {
+                        id: 1,
+                        full_name: 'Juan Pérez González',
+                        document_number: '12345678A',
+                        sector: 'cocina'
+                    },
+                    {
+                        id: 2,
+                        full_name: 'María García López',
+                        document_number: '87654321B',
+                        sector: 'sala'
+                    },
+                    {
+                        id: 3,
+                        full_name: 'Carlos Martínez Ruiz',
+                        document_number: '11223344C',
+                        sector: 'office'
+                    }
+                ];
+
+                const grid = document.getElementById('employeesGrid');
+                grid.innerHTML = employees.map(emp => `
+                    <div class="employee-card" onclick="loginEmployee('${emp.document_number}')">
+                        <div class="employee-avatar">
+                            ${emp.full_name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <h3>${emp.full_name}</h3>
+                        <p>${emp.sector}</p>
+                        <small>${emp.document_number}</small>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error cargando empleados:', error);
+            }
+        }
+
+        // Login empleado
+        async function loginEmployee(documentNumber) {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/employee`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ documentNumber })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentEmployee = data.employee;
+                    currentToken = data.token;
+                    showMainScreen();
+                    loadTodayAttendance();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Mostrar pantalla principal
+        function showMainScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            
+            document.getElementById('welcomeName').textContent = `Bienvenido, ${currentEmployee.fullName}`;
+            document.getElementById('welcomeSector').textContent = `Sector: ${currentEmployee.sector}`;
+        }
+
+        // Cargar registro del día
+        async function loadTodayAttendance() {
+            try {
+                const response = await fetch(`${API_BASE}/api/attendance/today`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+
+                const data = await response.json();
+                todayAttendance = data.attendance;
+                updateDesktopDisplay();
+                updateDesktopActions();
+            } catch (error) {
+                console.error('Error cargando asistencia:', error);
+            }
+        }
+
+        // Actualizar display del escritorio
+        function updateDesktopDisplay() {
+            const formatTime = (timeStr) => {
+                return timeStr ? new Date(timeStr).toLocaleTimeString('es-ES', { 
+                    hour: '2-digit', minute: '2-digit' 
+                }) : 'No registrada';
+            };
+
+            document.getElementById('desktopEntryTime').textContent = 
+                todayAttendance?.entry_time ? formatTime(todayAttendance.entry_time) : 'No registrada';
+            
+            document.getElementById('desktopSmokingBreak').textContent = 
+                todayAttendance?.smoking_break_start ? 
+                (todayAttendance.smoking_break_end ? '✅ Completada' : '🟡 En curso') : 'No iniciada';
+            
+            document.getElementById('desktopLunchBreak').textContent = 
+                todayAttendance?.lunch_break_start ? 
+                (todayAttendance.lunch_break_end ? '✅ Completada' : '🟡 En curso') : 'No iniciada';
+            
+            document.getElementById('desktopExitTime').textContent = 
+                todayAttendance?.exit_time ? formatTime(todayAttendance.exit_time) : 'No registrada';
+            
+            document.getElementById('desktopWorkedTime').textContent = 
+                todayAttendance?.total_worked_time ? 
+                `${Math.floor(todayAttendance.total_worked_time / 60)}h ${todayAttendance.total_worked_time % 60}m` : '-';
+        }
+
+        // Actualizar acciones del escritorio
+        function updateDesktopActions() {
+            const actionsPanel = document.getElementById('desktopActions');
+            let buttonsHTML = '';
+
+            if (!todayAttendance?.entry_time) {
+                buttonsHTML = `
+                    <button class="action-btn entry" onclick="registerDesktopAction('entry')">
+                        ✅ Registrar Entrada
+                    </button>
+                `;
+            } else if (!todayAttendance?.exit_time) {
+                buttonsHTML = `
+                    ${!todayAttendance.smoking_break_start ? `
+                        <button class="action-btn break" onclick="registerDesktopAction('smoking-break/start')">
+                            🚬 Iniciar Pausa Fumar
+                        </button>
+                    ` : !todayAttendance.smoking_break_end ? `
+                        <button class="action-btn break" onclick="registerDesktopAction('smoking-break/end')">
+                            🚬 Finalizar Pausa Fumar
+                        </button>
+                    ` : ''}
+                    
+                    ${!todayAttendance.lunch_break_start ? `
+                        <button class="action-btn lunch" onclick="registerDesktopAction('lunch-break/start')">
+                            🍽️ Iniciar Pausa Comida
+                        </button>
+                    ` : !todayAttendance.lunch_break_end ? `
+                        <button class="action-btn lunch" onclick="registerDesktopAction('lunch-break/end')">
+                            🍽️ Finalizar Pausa Comida
+                        </button>
+                    ` : ''}
+                    
+                    <button class="action-btn exit" onclick="registerDesktopAction('exit')">
+                        🏠 Registrar Salida
+                    </button>
+                `;
+            } else {
+                buttonsHTML = `
+                    <div style="text-align: center; padding: 20px; color: #28a745; font-weight: bold;">
+                        ✅ Jornada completada
+                    </div>
+                `;
+            }
+
+            actionsPanel.innerHTML = buttonsHTML;
+        }
+
+        // Registrar acción desde escritorio
+        async function registerDesktopAction(action) {
+            try {
+                const endpoints = {
+                    'entry': '/api/attendance/entry',
+                    'smoking-break/start': '/api/attendance/smoking-break/start',
+                    'smoking-break/end': '/api/attendance/smoking-break/end',
+                    'lunch-break/start': '/api/attendance/lunch-break/start',
+                    'lunch-break/end': '/api/attendance/lunch-break/end',
+                    'exit': '/api/attendance/exit'
+                };
+
+                const response = await fetch(`${API_BASE}${endpoints[action]}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    loadTodayAttendance();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error.message);
+            }
+        }
+
+        // Logout
+        function logout() {
+            currentEmployee = null;
+            currentToken = null;
+            todayAttendance = null;
+            
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+        }
+
+        // Inicializar
+        window.addEventListener('load', loadEmployees);
+    </script>
+</body>
+</html>

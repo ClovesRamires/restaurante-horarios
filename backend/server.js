@@ -468,7 +468,66 @@ app.get('/api/admin/attendance', authenticateToken, (req, res) => {
 
 // ==================== INICIO DEL SERVIDOR ====================
 const PORT = process.env.PORT || 5000;
+// ==================== SERVIR FRONTENDS ====================
+app.use(express.static('public'));
 
+// Ruta para móvil
+app.get('/mobile', (req, res) => {
+  res.sendFile(__dirname + '/public/mobile.html');
+});
+
+// Ruta para escritorio
+app.get('/desktop', (req, res) => {
+  res.sendFile(__dirname + '/public/desktop.html');
+});
+
+// Ruta para admin (próximamente)
+app.get('/admin-panel', (req, res) => {
+  res.send(`
+    <html>
+      <body>
+        <h1>Panel Admin - Próximamente</h1>
+        <p>El panel de administración estará disponible pronto.</p>
+      </body>
+    </html>
+  `);
+});
+// ==================== RUTAS PARA FRONTENDS ====================
+app.get('/mobile', (req, res) => {
+  res.sendFile(__dirname + '/public/mobile.html');
+});
+
+app.get('/desktop', (req, res) => {
+  res.sendFile(__dirname + '/public/desktop.html');
+});
+
+app.get('/admin', (req, res) => {
+  res.send(`
+    <html>
+      <head><title>Panel Admin - La Lumbre</title></head>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h1>👑 Panel de Administración</h1>
+        <p>El panel de administración completo estará disponible próximamente.</p>
+        <p><strong>Credenciales:</strong> usuario "admin", contraseña "Apolo13"</p>
+        <a href="/">Volver al inicio</a>
+      </body>
+    </html>
+  `);
+});
+
+// ==================== INICIO DEL SERVIDOR ====================
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('🚀 SISTEMA LA LUMBRE - 100% OPERATIVO');
+  console.log(`📍 URL Principal: https://tu-app.onrender.com`);
+  console.log(`📱 Móvil: https://tu-app.onrender.com/mobile`);
+  console.log(`💻 Escritorio: https://tu-app.onrender.com/desktop`);
+  console.log(`👑 Admin: https://tu-app.onrender.com/admin`);
+  console.log('\n🔐 CREDENCIALES:');
+  console.log('   👨‍💼 Admin: usuario "admin", contraseña "Apolo13"');
+  console.log('   👨‍🍳 Empleados: documentos 12345678A, 87654321B, 11223344C');
+});
 app.listen(PORT, '0.0.0.0', () => {
   console.log('🚀 SISTEMA LA LUMBRE - 100% OPERATIVO');
   console.log(`📍 URL: https://tu-app.onrender.com`);
@@ -486,3 +545,18 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('   🔐 Login empleado: /api/auth/employee');
   console.log('   👑 Login admin: /api/auth/admin');
 });
+const express = require('express');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const app = express();
+
+// 🔥 SERVIR ARCHIVOS ESTÁTICOS - AGREGAR ESTO
+app.use(express.static('public'));
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// ... el resto de tu código permanece igual ...
