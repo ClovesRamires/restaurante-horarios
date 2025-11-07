@@ -1,17 +1,11 @@
 services:
   - type: web
-    name: restaurante-backend-pg
+    name: restaurante-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: restaurante-db
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
       - key: NODE_ENV
         value: production
     healthCheckPath: /api/health
@@ -19,5 +13,5 @@ services:
 databases:
   - name: restaurante-db
     plan: free
-    databaseName: restauraurante_horarios
+    databaseName: restaurante_horarios
     user: restaurante_user

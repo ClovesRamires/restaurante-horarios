@@ -1,84 +1,62 @@
 require('dotenv').config();
 
-console.log('🔍 DIAGNÓSTICO AVANZADO - CONEXIÓN POSTGRESQL');
-console.log('==============================================\n');
+console.log('🔍 DIAGNÓSTICO RENDER - POSTGRESQL');
+console.log('====================================\n');
 
-// Verificar variables críticas
-console.log('1. 📋 VARIABLES DE ENTORNO CRÍTICAS:');
-console.log('   NODE_ENV:', process.env.NODE_ENV || 'No configurado');
-console.log('   PORT:', process.env.PORT || 'No configurado');
-console.log('   DATABASE_URL:', process.env.DATABASE_URL ? '✅ CONFIGURADA' : '❌ NO CONFIGURADA');
+console.log('1. 🏷️  INFORMACIÓN DEL ENTORNO:');
+console.log('   NODE_ENV:', process.env.NODE_ENV);
+console.log('   RENDER:', process.env.RENDER ? '✅ Sí' : '❌ No');
+console.log('   RENDER_SERVICE_ID:', process.env.RENDER_SERVICE_ID || 'No disponible');
+console.log('   RENDER_INSTANCE_ID:', process.env.RENDER_INSTANCE_ID || 'No disponible');
 
+console.log('\n2. 🔗 DATABASE_URL:');
 if (process.env.DATABASE_URL) {
   try {
     const url = new URL(process.env.DATABASE_URL);
+    console.log('   ✅ Configurada');
     console.log('   Host:', url.hostname);
-    console.log('   Puerto:', url.port);
-    console.log('   Base de datos:', url.pathname.substring(1));
+    console.log('   Puerto:', url.port || '5432');
+    console.log('   BD:', url.pathname.replace('/', ''));
     console.log('   Usuario:', url.username);
-    console.log('   SSL:', url.searchParams.get('ssl'));
+    console.log('   SSL:', url.searchParams.get('ssl') || 'not specified');
   } catch (e) {
-    console.log('   ❌ Error parseando DATABASE_URL');
+    console.log('   ❌ Error parseando URL');
   }
+} else {
+  console.log('   ❌ No configurada');
 }
 
-console.log('\n2. 📦 DEPENDENCIAS:');
-try {
-  const pg = require('pg');
-  console.log('   pg:', '✅', pg.version);
-} catch (error) {
-  console.log('   pg:', '❌ NO INSTALADO');
-}
-
-console.log('\n3. 🔌 TEST DE CONEXIÓN DIRECTA:');
+console.log('\n3. 🔌 TEST DE CONEXIÓN:');
 const { Client } = require('pg');
 
-const clientConfig = {
+const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-    require: true
-  },
-  connectionTimeoutMillis: 10000,
-  query_timeout: 10000,
-  statement_timeout: 10000
-};
-
-const client = new Client(clientConfig);
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000
+});
 
 client.connect()
   .then(() => {
-    console.log('   ✅ Conexión directa exitosa');
-    
-    return client.query('SELECT version(), current_database(), current_user');
+    console.log('   ✅ Conexión exitosa');
+    return client.query('SELECT version(), current_database()');
   })
   .then(result => {
-    console.log('   📊 Versión PostgreSQL:', result.rows[0].version.split(',')[0]);
+    console.log('   📊 PostgreSQL:', result.rows[0].version.split(',')[0]);
     console.log('   🗄️  Base de datos:', result.rows[0].current_database);
-    console.log('   👤 Usuario:', result.rows[0].current_user);
-    
-    return client.query('SELECT table_name FROM information_schema.tables WHERE table_schema = $1', ['public']);
+    return client.end();
   })
-  .then(result => {
-    console.log('   📋 Tablas existentes:', result.rows.map(row => row.table_name).join(', ') || 'Ninguna');
-    
-    client.end();
-    console.log('\n🎉 DIAGNÓSTICO COMPLETADO - Todo parece correcto');
-    console.log('💡 Si persiste el error, verifica en el dashboard de Render:');
-    console.log('   - Que la base de datos esté en estado "Available"');
-    console.log('   - Que la IP esté permitida en la configuración de red');
+  .then(() => {
+    console.log('\n🎉 Todo correcto - La conexión debería funcionar');
   })
   .catch(error => {
-    console.log('   ❌ Error de conexión directa:', error.message);
-    console.log('\n🔧 POSIBLES SOLUCIONES:');
-    console.log('   1. Verifica que la base de datos PostgreSQL esté creada en Render');
-    console.log('   2. Revisa que DATABASE_URL sea correcta en las variables de entorno');
-    console.log('   3. Verifica la configuración de red de la base de datos');
-    console.log('   4. Prueba recrear la base de datos en Render');
+    console.log('   ❌ Error:', error.message);
+    console.log('\n🔧 SOLUCIONES PARA RENDER:');
+    console.log('   1. Verifica que la PostgreSQL database esté creada');
+    console.log('   2. En el Web Service, ve a Environment y verifica DATABASE_URL');
+    console.log('   3. Si usas render.yaml, verifica la sintaxis');
+    console.log('   4. Prueba recrear la base de datos completamente');
     
-    if (error.message.includes('SSL')) {
-      console.log('   5. 🔐 Problema SSL - La configuración actual debería manejarlo');
+    if (error.message.includes('does not exist')) {
+      console.log('   5. ⚠️  La base de datos no existe - Crea una nueva');
     }
-    
-    process.exit(1);
   });
