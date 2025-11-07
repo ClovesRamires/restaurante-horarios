@@ -15,15 +15,9 @@ services:
       - key: NODE_ENV
         value: production
     healthCheckPath: /api/health
-    # Configuración adicional para mejor estabilidad
-    autoDeploy: true
-    pullRequestPreviewsEnabled: false
 
 databases:
   - name: restaurante-db
     plan: free
-    databaseName: restaurante_horarios
+    databaseName: restauraurante_horarios
     user: restaurante_user
-    # Configuración adicional
-    ipAllowList: []
-    terminationProtection: false

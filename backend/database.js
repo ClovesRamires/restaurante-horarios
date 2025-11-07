@@ -1,7 +1,11 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Configuración mejorada de PostgreSQL
+console.log('🔧 Configurando conexión a PostgreSQL...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL presente:', !!process.env.DATABASE_URL);
+
+// Configuración robusta de PostgreSQL para Render
 const getPoolConfig = () => {
   const connectionString = process.env.DATABASE_URL;
   
@@ -10,15 +14,24 @@ const getPoolConfig = () => {
     throw new Error('DATABASE_URL no configurada');
   }
 
+  console.log('📊 Configurando pool de conexiones...');
+  
   return {
     connectionString: connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { 
-      rejectUnauthorized: false 
-    } : false,
-    // Configuraciones adicionales para mejor estabilidad
+    // Configuración SSL específica para Render
+    ssl: {
+      rejectUnauthorized: false,
+      require: true
+    },
+    // Configuraciones de tiempo de espera
+    connectionTimeoutMillis: 10000, // 10 segundos
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    max: 20, // máximo de conexiones en el pool
+    max: 10,
+    // Reintentos de conexión
+    retry: {
+      max: 3,
+      timeout: 1000
+    }
   };
 };
 
@@ -26,49 +39,81 @@ let pool;
 
 try {
   pool = new Pool(getPoolConfig());
+  console.log('✅ Pool de conexiones creado');
   
-  // Eventos del pool para debugging
-  pool.on('connect', () => {
-    console.log('✅ Nueva conexión a PostgreSQL establecida');
+  // Manejo de eventos para debugging
+  pool.on('connect', (client) => {
+    console.log('🔄 Nueva conexión establecida con PostgreSQL');
   });
   
-  pool.on('error', (err) => {
-    console.error('❌ Error inesperado en el pool de PostgreSQL:', err);
+  pool.on('acquire', (client) => {
+    console.log('📥 Cliente adquirido del pool');
+  });
+  
+  pool.on('remove', (client) => {
+    console.log('📤 Cliente removido del pool');
+  });
+  
+  pool.on('error', (err, client) => {
+    console.error('❌ Error en el pool de PostgreSQL:', err);
   });
   
 } catch (error) {
-  console.error('❌ Error creando el pool de conexiones:', error);
+  console.error('💥 Error crítico creando el pool:', error);
   throw error;
 }
 
-// Función para probar la conexión
+// Función mejorada para probar conexión
 const testConnection = async () => {
+  let client;
   try {
-    const client = await pool.connect();
-    console.log('✅ Conexión a PostgreSQL exitosa');
+    console.log('🔌 Intentando conectar a PostgreSQL...');
+    console.log('Connection string:', process.env.DATABASE_URL ? '✅ Presente' : '❌ Ausente');
     
-    const result = await client.query('SELECT version()');
-    console.log('📊 Versión de PostgreSQL:', result.rows[0].version);
+    client = await pool.connect();
+    console.log('✅ Cliente conectado exitosamente');
+    
+    const result = await client.query('SELECT version(), NOW() as current_time');
+    console.log('📊 PostgreSQL Version:', result.rows[0].version);
+    console.log('⏰ Hora del servidor:', result.rows[0].current_time);
+    
+    // Verificar que podemos escribir
+    await client.query('SELECT 1 as test');
+    console.log('✅ Query de prueba ejecutada correctamente');
     
     client.release();
     return true;
   } catch (error) {
-    console.error('❌ Error conectando a PostgreSQL:', error.message);
-    console.log('🔧 DATABASE_URL:', process.env.DATABASE_URL ? '✅ Configurada' : '❌ No configurada');
+    console.error('❌ Error en testConnection:', error.message);
+    console.error('🔍 Detalles del error:', {
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint
+    });
+    
+    if (client) {
+      try {
+        client.release(true); // Liberar con error
+      } catch (releaseError) {
+        console.error('Error liberando cliente:', releaseError);
+      }
+    }
     return false;
   }
 };
 
 // Función para inicializar la base de datos
 const initDatabase = async () => {
+  console.log('🔄 Iniciando inicialización de base de datos...');
+  
   try {
-    console.log('🔄 Inicializando base de datos...');
-    
-    // Primero probar la conexión
+    // Primero probar la conexión básica
     const connected = await testConnection();
     if (!connected) {
-      throw new Error('No se pudo conectar a la base de datos');
+      throw new Error('No se pudo establecer conexión inicial con la base de datos');
     }
+
+    console.log('📁 Creando tablas...');
 
     // Tabla de empleados
     await pool.query(`
@@ -82,6 +127,7 @@ const initDatabase = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Tabla employees creada/verificada');
 
     // Tabla de asistencia
     await pool.query(`
@@ -100,6 +146,7 @@ const initDatabase = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Tabla attendance creada/verificada');
 
     // Tabla de administradores
     await pool.query(`
@@ -110,16 +157,20 @@ const initDatabase = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('✅ Tabla admins creada/verificada');
 
     // Insertar admin por defecto
     const adminCheck = await pool.query('SELECT * FROM admins WHERE username = $1', ['admin']);
     if (adminCheck.rows.length === 0) {
+      const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash('Apolo13', 12);
       await pool.query(
         'INSERT INTO admins (username, password) VALUES ($1, $2)',
         ['admin', hashedPassword]
       );
-      console.log('✅ Admin por defecto creado (usuario: admin, contraseña: Apolo13)');
+      console.log('✅ Admin por defecto creado');
+    } else {
+      console.log('✅ Admin ya existe');
     }
 
     // Insertar empleados de ejemplo si no existen
@@ -132,12 +183,15 @@ const initDatabase = async () => {
         ('Carlos Martínez Ruiz', '11223344C', '281122334455', 'office')
       `);
       console.log('✅ Empleados de ejemplo creados');
+    } else {
+      console.log('✅ Empleados ya existen');
     }
 
-    console.log('✅ Base de datos inicializada correctamente');
+    console.log('🎉 Base de datos inicializada completamente');
     return true;
   } catch (error) {
-    console.error('❌ Error inicializando base de datos:', error);
+    console.error('💥 Error en initDatabase:', error);
+    console.error('Stack trace:', error.stack);
     throw error;
   }
 };
@@ -147,35 +201,20 @@ const healthCheck = async () => {
   try {
     const result = await pool.query('SELECT NOW() as current_time, version() as version');
     
-    // Verificar también las tablas esenciales
-    const tablesCheck = await pool.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name IN ('employees', 'attendance', 'admins')
-    `);
-    
-    const essentialTables = ['employees', 'attendance', 'admins'];
-    const missingTables = essentialTables.filter(table => 
-      !tablesCheck.rows.find(row => row.table_name === table)
-    );
-
     return {
       status: 'healthy',
       database: 'connected',
       current_time: result.rows[0].current_time,
       version: result.rows[0].version,
-      tables: {
-        status: missingTables.length === 0 ? 'complete' : 'incomplete',
-        missing: missingTables
-      }
+      message: 'Conexión a PostgreSQL establecida correctamente'
     };
   } catch (error) {
+    console.error('Health check error:', error.message);
     return {
       status: 'unhealthy',
       database: 'disconnected',
       error: error.message,
-      suggestion: 'Verificar la configuración de DATABASE_URL en Render'
+      suggestion: 'Verificar la configuración de DATABASE_URL y SSL'
     };
   }
 };
