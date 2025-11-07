@@ -204,6 +204,30 @@
             color: #333;
         }
         
+        .error-message {
+            background: #dc3545;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .success-message {
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -211,6 +235,12 @@
             
             .employees-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .welcome-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
             }
         }
     </style>
@@ -240,6 +270,9 @@
                 </div>
                 <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
             </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
 
             <div class="dashboard">
                 <div class="attendance-panel">
@@ -271,7 +304,7 @@
                 <div class="attendance-panel">
                     <h2>⏰ Acciones</h2>
                     <div class="actions-panel" id="desktopActions">
-                        <!-- Los botones se generan dinámicamente -->
+                        <div class="loading">Selecciona una acción...</div>
                     </div>
                 </div>
             </div>
@@ -280,73 +313,105 @@
 
     <script>
         const API_BASE = window.location.origin;
+        console.log('API Base:', API_BASE);
+        
         let currentEmployee = null;
         let currentToken = null;
         let todayAttendance = null;
 
-        // Cargar empleados para login
-        async function loadEmployees() {
-            try {
-                // En una app real, obtendríamos esto del backend
-                // Por ahora usamos datos estáticos
-                const employees = [
-                    {
-                        id: 1,
-                        full_name: 'Juan Pérez González',
-                        document_number: '12345678A',
-                        sector: 'cocina'
-                    },
-                    {
-                        id: 2,
-                        full_name: 'María García López',
-                        document_number: '87654321B',
-                        sector: 'sala'
-                    },
-                    {
-                        id: 3,
-                        full_name: 'Carlos Martínez Ruiz',
-                        document_number: '11223344C',
-                        sector: 'office'
-                    }
-                ];
-
-                const grid = document.getElementById('employeesGrid');
-                grid.innerHTML = employees.map(emp => `
-                    <div class="employee-card" onclick="loginEmployee('${emp.document_number}')">
-                        <div class="employee-avatar">
-                            ${emp.full_name.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <h3>${emp.full_name}</h3>
-                        <p>${emp.sector}</p>
-                        <small>${emp.document_number}</small>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error cargando empleados:', error);
+        // Mostrar/ocultar mensajes
+        function showMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            element.className = isError ? 'error-message' : 'success-message';
+            
+            if (!isError) {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 3000);
             }
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        // Cargar empleados para login
+        function loadEmployees() {
+            const employees = [
+                {
+                    id: 1,
+                    full_name: 'Juan Pérez González',
+                    document_number: '12345678A',
+                    sector: 'cocina'
+                },
+                {
+                    id: 2,
+                    full_name: 'María García López',
+                    document_number: '87654321B',
+                    sector: 'sala'
+                },
+                {
+                    id: 3,
+                    full_name: 'Carlos Martínez Ruiz',
+                    document_number: '11223344C',
+                    sector: 'office'
+                }
+            ];
+
+            const grid = document.getElementById('employeesGrid');
+            grid.innerHTML = employees.map(emp => `
+                <div class="employee-card" onclick="loginEmployee('${emp.document_number}')">
+                    <div class="employee-avatar">
+                        ${emp.full_name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <h3>${emp.full_name}</h3>
+                    <p>${emp.sector}</p>
+                    <small>${emp.document_number}</small>
+                </div>
+            `).join('');
         }
 
         // Login empleado
         async function loginEmployee(documentNumber) {
+            hideMessages();
+            
             try {
+                console.log('Intentando login con documento:', documentNumber);
+                
                 const response = await fetch(`${API_BASE}/api/auth/employee`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ documentNumber })
                 });
 
+                console.log('Respuesta recibida:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Datos recibidos:', data);
                 
                 if (data.success) {
                     currentEmployee = data.employee;
                     currentToken = data.token;
+                    localStorage.setItem('employeeToken', data.token);
+                    localStorage.setItem('employeeData', JSON.stringify(data.employee));
                     showMainScreen();
-                    loadTodayAttendance();
+                    await loadTodayAttendance();
+                    showMessage('successMessage', `✅ Bienvenido ${data.employee.fullName}`, false);
                 } else {
-                    alert('Error: ' + data.message);
+                    showMessage('errorMessage', data.message || 'Error en el login', true);
                 }
             } catch (error) {
-                alert('Error de conexión: ' + error.message);
+                console.error('Error en login:', error);
+                showMessage('errorMessage', 'Error de conexión: ' + error.message, true);
             }
         }
 
@@ -362,25 +427,47 @@
         // Cargar registro del día
         async function loadTodayAttendance() {
             try {
+                hideMessages();
+                
                 const response = await fetch(`${API_BASE}/api/attendance/today`, {
-                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                    headers: { 
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
 
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
                 const data = await response.json();
-                todayAttendance = data.attendance;
-                updateDesktopDisplay();
-                updateDesktopActions();
+                console.log('Asistencia de hoy:', data);
+                
+                if (data.success) {
+                    todayAttendance = data.attendance;
+                    updateDesktopDisplay();
+                    updateDesktopActions();
+                } else {
+                    showMessage('errorMessage', data.message || 'Error cargando asistencia', true);
+                }
             } catch (error) {
                 console.error('Error cargando asistencia:', error);
+                showMessage('errorMessage', 'Error de conexión: ' + error.message, true);
             }
         }
 
         // Actualizar display del escritorio
         function updateDesktopDisplay() {
             const formatTime = (timeStr) => {
-                return timeStr ? new Date(timeStr).toLocaleTimeString('es-ES', { 
-                    hour: '2-digit', minute: '2-digit' 
-                }) : 'No registrada';
+                if (!timeStr) return 'No registrada';
+                try {
+                    return new Date(timeStr).toLocaleTimeString('es-ES', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                    });
+                } catch (e) {
+                    return 'Hora inválida';
+                }
             };
 
             document.getElementById('desktopEntryTime').textContent = 
@@ -407,34 +494,53 @@
             const actionsPanel = document.getElementById('desktopActions');
             let buttonsHTML = '';
 
-            if (!todayAttendance?.entry_time) {
+            if (!todayAttendance) {
                 buttonsHTML = `
                     <button class="action-btn entry" onclick="registerDesktopAction('entry')">
                         ✅ Registrar Entrada
                     </button>
                 `;
-            } else if (!todayAttendance?.exit_time) {
+            } else if (!todayAttendance.entry_time) {
                 buttonsHTML = `
-                    ${!todayAttendance.smoking_break_start ? `
+                    <button class="action-btn entry" onclick="registerDesktopAction('entry')">
+                        ✅ Registrar Entrada
+                    </button>
+                `;
+            } else if (!todayAttendance.exit_time) {
+                buttonsHTML = '';
+                
+                // Botones de pausa para fumar
+                if (!todayAttendance.smoking_break_start) {
+                    buttonsHTML += `
                         <button class="action-btn break" onclick="registerDesktopAction('smoking-break/start')">
                             🚬 Iniciar Pausa Fumar
                         </button>
-                    ` : !todayAttendance.smoking_break_end ? `
+                    `;
+                } else if (!todayAttendance.smoking_break_end) {
+                    buttonsHTML += `
                         <button class="action-btn break" onclick="registerDesktopAction('smoking-break/end')">
                             🚬 Finalizar Pausa Fumar
                         </button>
-                    ` : ''}
-                    
-                    ${!todayAttendance.lunch_break_start ? `
+                    `;
+                }
+
+                // Botones de pausa para comida
+                if (!todayAttendance.lunch_break_start) {
+                    buttonsHTML += `
                         <button class="action-btn lunch" onclick="registerDesktopAction('lunch-break/start')">
                             🍽️ Iniciar Pausa Comida
                         </button>
-                    ` : !todayAttendance.lunch_break_end ? `
+                    `;
+                } else if (!todayAttendance.lunch_break_end) {
+                    buttonsHTML += `
                         <button class="action-btn lunch" onclick="registerDesktopAction('lunch-break/end')">
                             🍽️ Finalizar Pausa Comida
                         </button>
-                    ` : ''}
-                    
+                    `;
+                }
+
+                // Botón de salida
+                buttonsHTML += `
                     <button class="action-btn exit" onclick="registerDesktopAction('exit')">
                         🏠 Registrar Salida
                     </button>
@@ -443,16 +549,26 @@
                 buttonsHTML = `
                     <div style="text-align: center; padding: 20px; color: #28a745; font-weight: bold;">
                         ✅ Jornada completada
+                        <br>
+                        <small style="color: #666;">
+                            Total trabajado: ${todayAttendance.total_worked_time ? 
+                                `${Math.floor(todayAttendance.total_worked_time / 60)}h ${todayAttendance.total_worked_time % 60}m` 
+                                : 'Calculando...'}
+                        </small>
                     </div>
                 `;
             }
 
-            actionsPanel.innerHTML = buttonsHTML;
+            actionsPanel.innerHTML = buttonsHTML || '<div class="loading">No hay acciones disponibles</div>';
         }
 
         // Registrar acción desde escritorio
         async function registerDesktopAction(action) {
             try {
+                hideMessages();
+                
+                console.log('Registrando acción:', action);
+                
                 const endpoints = {
                     'entry': '/api/attendance/entry',
                     'smoking-break/start': '/api/attendance/smoking-break/start',
@@ -462,7 +578,12 @@
                     'exit': '/api/attendance/exit'
                 };
 
-                const response = await fetch(`${API_BASE}${endpoints[action]}`, {
+                const endpoint = endpoints[action];
+                if (!endpoint) {
+                    throw new Error('Acción no válida');
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${currentToken}`,
@@ -470,16 +591,22 @@
                     }
                 });
 
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
                 const data = await response.json();
+                console.log('Respuesta acción:', data);
                 
                 if (data.success) {
-                    alert('✅ ' + data.message);
-                    loadTodayAttendance();
+                    showMessage('successMessage', '✅ ' + data.message, false);
+                    await loadTodayAttendance();
                 } else {
-                    alert('❌ ' + data.message);
+                    showMessage('errorMessage', '❌ ' + data.message, true);
                 }
             } catch (error) {
-                alert('Error de conexión: ' + error.message);
+                console.error('Error registrando acción:', error);
+                showMessage('errorMessage', 'Error: ' + error.message, true);
             }
         }
 
@@ -488,13 +615,42 @@
             currentEmployee = null;
             currentToken = null;
             todayAttendance = null;
+            localStorage.removeItem('employeeToken');
+            localStorage.removeItem('employeeData');
             
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'block';
+            hideMessages();
         }
 
         // Inicializar
-        window.addEventListener('load', loadEmployees);
+        window.addEventListener('load', () => {
+            console.log('Aplicación de escritorio cargada');
+            loadEmployees();
+            
+            // Intentar auto-login si hay datos guardados
+            const savedToken = localStorage.getItem('employeeToken');
+            const savedEmployee = localStorage.getItem('employeeData');
+            
+            if (savedToken && savedEmployee) {
+                try {
+                    currentToken = savedToken;
+                    currentEmployee = JSON.parse(savedEmployee);
+                    showMainScreen();
+                    loadTodayAttendance();
+                } catch (error) {
+                    console.error('Error en auto-login:', error);
+                    localStorage.removeItem('employeeToken');
+                    localStorage.removeItem('employeeData');
+                }
+            }
+        });
+
+        // Manejar errores no capturados
+        window.addEventListener('error', (event) => {
+            console.error('Error global:', event.error);
+            showMessage('errorMessage', 'Error inesperado: ' + event.error.message, true);
+        });
     </script>
 </body>
 </html>
